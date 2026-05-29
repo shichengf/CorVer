@@ -1,0 +1,66 @@
+# Python
+__pycache__/
+*.py[cod]
+*$py.class
+*.so
+.Python
+.pytest_cache/
+.coverage
+htmlcov/
+*.egg-info/
+build/
+dist/
+
+# Virtual environments
+venv/
+.venv/
+env/
+ENV/
+
+# IDE / editors
+.idea/
+.vscode/
+*.swp
+*.swo
+.DS_Store
+
+# Training artifacts (large, regenerable)
+train/output/
+train/eval_results/
+train/grpo_trainer_lora_model/
+logs/
+self_filter_logs/
+wandb/
+
+# Local infigram index (download from HuggingFace, ~38 GB)
+infigram_index/
+*.idx
+*.dat
+*.dat.*
+
+# Large data not bundled (rebuild with data/pipeline/ or download from HuggingFace)
+data/rl/*.json
+!data/rl/stepwise_curriculum_llama31_8b.json
+data/knowrl_train_data/
+data/wikipedia_jsonl/
+data/raw/
+data/intermediate/
+data/final/
+data/step1_candidates.json
+data/step2_*.json
+data/new_simple_*.json
+data/verified_simple_*.json
+
+# Local model staging
+*.safetensors
+*.bin
+
+# Secrets / env
+.env
+.env.local
+*.pem
+*.key
+
+# OS junk
+Thumbs.db
+.fuse_hidden*

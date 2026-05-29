@@ -1,0 +1,31 @@
+# CorVer pip dependencies.
+#
+# Mirrors the canonical conda environment in environment.yml. Prefer the conda
+# install (`conda env create -f environment.yml`) when possible — these pins are
+# only known to work on Python 3.12.
+
+# Core training stack
+torch==2.8.0
+torchvision==0.23.0
+torchaudio==2.8.0
+transformers==4.57.1
+trl==0.23.0
+peft==0.18.1
+accelerate
+datasets==4.3.0
+unsloth==2026.2.1
+unsloth-zoo==2026.2.1
+vllm==0.11.0
+huggingface-hub
+safetensors
+
+# Data pipeline + reward dependencies
+openai==2.16.0
+aiohttp==3.13.3
+PyYAML
+semhash         # step1_dedup.py
+infini-gram     # corver_reward/infigram_*_client.py  (or install from source — see README)
+
+# Logging / tracking (wandb is the launcher default; swanlab is optional)
+wandb==0.24.1
+swanlab         # optional; activated when YAML sets report_to: swanlab

@@ -1,0 +1,45 @@
+# Qwen3-14B: CorVer stepwise GRPO training config.
+# Note: 14B uses a larger learning rate (2.5e-5) and disables the KL penalty
+# (beta=0.0) compared to the other 6 models, as the 14B policy showed little
+# movement at the smaller settings.
+model_name_or_path: "Qwen/Qwen3-14B"
+torch_dtype: bfloat16
+lora_r: 128
+lora_alpha: 256
+attn_implementation: flash_attention_2
+bf16: true
+tf32: true
+output_dir: "output/qwen3_14b"
+run_name: "qwen3_14b"
+
+dataset_id_or_path: ../data/rl/stepwise_curriculum_qwen3_14b.json
+report_to: wandb
+
+max_steps: 100
+per_device_train_batch_size: 2
+gradient_accumulation_steps: 12
+gradient_checkpointing: true
+gradient_checkpointing_kwargs:
+  use_reentrant: false
+learning_rate: 2.5e-5
+lr_scheduler_type: cosine
+warmup_ratio: 0.03
+max_grad_norm: 1.0
+seed: 42
+
+loss_type: grpo
+beta: 0.0
+optim: adamw_8bit
+max_prompt_length: 256
+max_completion_length: 1024
+num_generations: 16
+mask_truncated_completions: false
+use_vllm: true
+vllm_gpu_memory_utilization: 0.55
+
+logging_strategy: steps
+logging_steps: 1
+save_strategy: "steps"
+save_steps: 50
+save_total_limit: 8
+resume_from_checkpoint: false
