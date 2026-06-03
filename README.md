@@ -69,14 +69,11 @@ Per-target self-filtering (`train/check_positive_signal.py`) produces `data/rl/s
 ## Citation
 
 ```bibtex
-@misc{fan2026corver,
-      title  = {Verifiable Rewards Beyond Math and Code: Lightweight Corpus-Grounded Process Supervision for Factual Question Answering},
-      author = {Shicheng Fan and Haochang Hao and Dehai Min and Weihao Liu and Philip S. Yu and Lu Cheng},
-      year   = {2026},
-      eprint = {2605.29648},
-      archivePrefix = {arXiv},
-      primaryClass = {cs.CL},
-      url    = {https://arxiv.org/abs/2605.29648},
+@article{fan2026verifiable,
+  title={Verifiable Rewards Beyond Math and Code: Lightweight Corpus-Grounded Process Supervision for Factual Question Answering},
+  author={Fan, Shicheng and Hao, Haochang and Min, Dehai and Liu, Weihao and Yu, Philip S and Cheng, Lu},
+  journal={arXiv preprint arXiv:2605.29648},
+  year={2026}
 }
 ```
 
