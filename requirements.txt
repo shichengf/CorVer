@@ -1,0 +1,17 @@
+# CorVer runtime: Python 3.12, Linux, CUDA GPU.
+torch==2.8.0
+torchvision==0.23.0
+torchaudio==2.8.0
+transformers==4.57.1
+trl==0.23.0
+peft==0.18.1
+accelerate==1.11.0
+datasets==4.3.0
+unsloth==2025.11.6
+unsloth-zoo==2025.11.6
+vllm==0.11.0
+bitsandbytes==0.50.2
+huggingface-hub==0.36.2
+safetensors==0.8.0
+PyYAML==6.0.3
+infini-gram==2.6.0
