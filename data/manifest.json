@@ -1,0 +1,10 @@
+{
+  "rows": 6621,
+  "file": "train.json",
+  "sha256": "ea452cb6432b4194a108d6507323cf40f3cbb109c1b89295d7898a7d444a1706",
+  "sources": [
+    "NQ-Open training split",
+    "WebQuestions training and test splits"
+  ],
+  "description": "Selected questions and reference answers for the paper main method. No evidence is passed to the policy."
+}

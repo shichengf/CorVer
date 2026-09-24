@@ -1,82 +1,94 @@
 # CorVer
 
-[![arXiv](https://img.shields.io/badge/arXiv-2605.29648-b31b1b?logo=arxiv&logoColor=white)](https://arxiv.org/abs/2605.29648) [![Hugging Face Paper](https://img.shields.io/badge/%F0%9F%A4%97%20Hugging%20Face-Paper-yellow)](https://huggingface.co/papers/2605.29648) [![Hugging Face Dataset](https://img.shields.io/badge/%F0%9F%A4%97%20Hugging%20Face-Index-yellow)](https://huggingface.co/datasets/Shichengf/CorVer-infini-gram-index) [![License](https://img.shields.io/badge/License-MIT-blue)](LICENSE)
+**Beyond Math and Code: Lightweight Corpus-Grounded Process Rewards for Factual Question Answering**
 
-**CorVer** (*Corpus Verify*) — a lightweight, plug-in-ready process reward for RL fine-tuning on factual QA. Sentence-level credit comes from a single Wikipedia co-occurrence lookup, no neural verifier.
+[Paper · arXiv](https://arxiv.org/abs/2605.29648) · [Training guide](docs/training.md) · [Baseline resources](#baseline-resources) · [MIT license](LICENSE)
 
-**[arXiv](https://arxiv.org/abs/2605.29648)** · **[HF Paper](https://huggingface.co/papers/2605.29648)** · **[Wikipedia Index](https://huggingface.co/datasets/Shichengf/CorVer-infini-gram-index)** · **[Training Data](https://huggingface.co/datasets/Shichengf/CorVer-training-data)**
+CorVer assigns sentence-level factual rewards using a frozen 0.5B triplet extractor and a Wikipedia co-occurrence index. These rewards are aligned to generated tokens and combined with answer-correctness and format rewards for GRPO training. At inference time, only the trained policy is needed.
 
-![CorVer pipeline](figures/figure_2.png)
+![CorVer method](docs/assets/method.png)
 
-*Each sentence is scored for Wikipedia co-occurrence via an Infini-gram index. The per-sentence reward is mapped to token-level returns through an alignment $\sigma$, then combined with response-level judge and format rewards in a GRPO update.*
+This repository contains the CorVer training implementation, configurations for six 3B–14B models, and the selected training questions.
 
-## What is CorVer?
+For method details and experimental results, see the [paper on arXiv](https://arxiv.org/abs/2605.29648).
 
-> CorVer replaces neural verifiers (NLI, LLM judges, retrieval-and-grade) with a corpus-grounded signal derived from Wikipedia co-occurrence counts. Each sentence costs one 0.5 B extractor pass and one indexed CNF lookup; sentence-level credit is mapped to token-level advantages through a simple alignment.
+## Repository layout
 
-**Headline numbers** (paper Table 1): 30 (model × benchmark) cells across six instruction-tuned models (3 B – 14 B) and five QA benchmarks. CorVer beats the raw baseline in every cell (+4.1 pp average on TriviaQA) and outperforms four neural-verifier baselines in 18 / 20 cells at 4.8 – 8.4× lower training cost.
+```text
+corver/                  Main method
+  train.py               Training entry point
+  configs/               Six model configurations
+  rewards/               Corpus lookup, extractor, and sentence rewards
+  training/              GRPO trainer, loss, and token alignment checks
+common/                  Shared data/configuration helpers and answer protocol
+data/                    Selected training questions
+docs/                    Training guide, method figure, and third-party notices
+tests/                   Reward, optimization, and configuration checks
+```
+
+Run the CorVer module commands below from the repository root.
+
+## Model configurations
+
+The base models below are the official instruction-tuned starting checkpoints. Each YAML pins its revision.
+
+| Model | Official base model | Configuration |
+|---|---|---|
+| Llama-3.2-3B-Instruct | [meta-llama/Llama-3.2-3B-Instruct](https://huggingface.co/meta-llama/Llama-3.2-3B-Instruct) | [llama32_3b.yaml](corver/configs/llama32_3b.yaml) |
+| Qwen3-4B | [Qwen/Qwen3-4B](https://huggingface.co/Qwen/Qwen3-4B) | [qwen3_4b.yaml](corver/configs/qwen3_4b.yaml) |
+| Llama-3.1-8B-Instruct | [meta-llama/Llama-3.1-8B-Instruct](https://huggingface.co/meta-llama/Llama-3.1-8B-Instruct) | [llama31_8b.yaml](corver/configs/llama31_8b.yaml) |
+| Qwen3-8B | [Qwen/Qwen3-8B](https://huggingface.co/Qwen/Qwen3-8B) | [qwen3_8b.yaml](corver/configs/qwen3_8b.yaml) |
+| OLMo-2-1124-13B-Instruct | [allenai/OLMo-2-1124-13B-Instruct](https://huggingface.co/allenai/OLMo-2-1124-13B-Instruct) | [olmo2_13b.yaml](corver/configs/olmo2_13b.yaml) |
+| Qwen3-14B | [Qwen/Qwen3-14B](https://huggingface.co/Qwen/Qwen3-14B) | [qwen3_14b.yaml](corver/configs/qwen3_14b.yaml) |
+
+The 13B/14B configurations use microbatch 1 and gradient accumulation 48, with three questions and 16 completions per question.
 
 ## Quick start
 
-```bash
-# 1. env
-conda env create -f environment.yml && conda activate verl
-
-# 2. prebuilt Wikipedia infini-gram index (Llama-2 tokenized)
-huggingface-cli download Shichengf/CorVer-infini-gram-index \
-    --repo-type dataset --local-dir ./infigram_index
-export INFIGRAM_LOCAL_INDEX_DIR=./infigram_index
-
-# 3. infini-gram engine + Llama-2 tokenizer (gated; request access on HF)
-pip install infini-gram
-huggingface-cli login
-
-# 4. train Llama-3.1-8B-Instruct (1× A100 80GB, ~3 h)
-bash train/run_8b_models.sh
-```
-
-The Llama-3.1-8B self-filtered curriculum is bundled at [`data/rl/stepwise_curriculum_llama31_8b.json`](data/rl/stepwise_curriculum_llama31_8b.json). For the other five models, grab the matching curriculum from the [training-data dataset](https://huggingface.co/datasets/Shichengf/CorVer-training-data) and drop it into `data/rl/`:
+Use Linux, Python 3.12, and a CUDA GPU. The experiments use a single H100 80GB. Accept the base model's access terms on Hugging Face when required.
 
 ```bash
-huggingface-cli download Shichengf/CorVer-training-data \
-    --repo-type dataset --include "curricula/*" --local-dir ./_corver_data
-mv ./_corver_data/curricula/*.json data/rl/ && rm -rf ./_corver_data
+python3.12 -m venv .venv
+source .venv/bin/activate
+pip install -r requirements.txt
+hf auth login
+
+hf download UIC-AI-lab/infigram-wikipedia-index --repo-type dataset \
+  --revision eb79e36cec15d9738f5b39a0e3db911b8d0f7c1e \
+  --local-dir ./infigram_index
+export CORVER_INDEX_DIR="$PWD/infigram_index"
+
+# Validate the configuration and data on CPU.
+python -m corver.train --config corver/configs/llama32_3b.yaml --dry-run
+
+# Full CorVer training; one visible GPU.
+CUDA_VISIBLE_DEVICES=0 python -m corver.train \
+  --config corver/configs/llama32_3b.yaml
 ```
 
-Or rebuild from scratch (see *Rebuilding data*).
+Choose a YAML from the model table above; the same entry point accepts the 13B/14B configurations. Model, extractor, tokenizer, and index revisions are pinned in each configuration. Resource downloads use the standard Hugging Face cache.
 
-## Models & launchers
+Relative data and output paths resolve from the repository root. Use `--output` for a separate run, `--model-path` / `--extractor-path` for local resource copies, and `--resume` to continue a complete checkpoint. Resume checks the configuration and training-data hash. See [data notes](data/README.md) and [configuration details](docs/training.md).
 
-One canonical config per model, all 100 GRPO steps (paper Appendix A.3):
+## Development checks
 
-| Model | YAML | Launcher |
-|---|---|---|
-| Llama-3.2-3B-Instruct | `train/script/grpo_llama32_3b.yaml` | `train/run_llama32_3b.sh` |
-| Qwen3-4B | `train/script/grpo_qwen3_4b.yaml` | `train/run_qwen3_4b.sh` |
-| Llama-3.1-8B-Instruct *(headline)* | `train/script/grpo_llama31_8b.yaml` | `train/run_8b_models.sh` |
-| Qwen3-8B | `train/script/grpo_qwen3_8b.yaml` | `train/run_8b_models.sh` |
-| OLMo-2-1124-13B-Instruct | `train/script/grpo_olmo2_13b.yaml` | `train/run_olmo2_13b.sh` |
-| Qwen3-14B | `train/script/grpo_qwen3_14b.yaml` | `train/run_qwen3_14b.sh` |
-
-Reward ablations live in `train/script/grpo_llama31_8b_{judge,corver}_only.yaml` (`train/run_llama31_8b_ablations.sh`).
-
-## Rebuilding data
-
-The end-to-end pipeline lives in `data/pipeline/`; run `bash data/pipeline/run_pipeline.sh`. It pulls NQ-Open + WebQuestions, dedups, refines / classifies via an OpenAI-compatible chat endpoint, grounds entities against Wikipedia, then assembles the per-difficulty RL pools. Set `DATA_LLM_BASE_URL`, `DATA_LLM_API_KEY`, `DATA_LLM_MODEL`, and `WIKIPEDIA_JSONL_DIR` first. The upstream [KnowRL training data](https://huggingface.co/datasets/zjunlp/KnowRL-Train-Data) is used as the baseline pool in the paper; CorVer itself does not depend on it.
-
-Per-target self-filtering (`train/check_positive_signal.py`) produces `data/rl/stepwise_curriculum_<model>.json` from the merged pool, retaining prompts the raw target solves with `n_correct ∈ [1, G-1]` over G = 16 generations.
-
-## Citation
-
-```bibtex
-@article{fan2026verifiable,
-  title={Verifiable Rewards Beyond Math and Code: Lightweight Corpus-Grounded Process Supervision for Factual Question Answering},
-  author={Fan, Shicheng and Hao, Haochang and Min, Dehai and Liu, Weihao and Yu, Philip S and Cheng, Lu},
-  journal={arXiv preprint arXiv:2605.29648},
-  year={2026}
-}
+```bash
+python -m unittest discover -s tests -v
 ```
 
-## License
+## Baseline resources
 
-[MIT](LICENSE)
+Public resources for the baselines compared in the paper:
+
+| Method | Public resources |
+|---|---|
+| FSPO | [Official code](https://github.com/nusnlp/FSPO) |
+| RLFH | [Official code](https://github.com/AlignRM/RLFH) |
+| FoRAG | [Official models and datasets](https://huggingface.co/forag) |
+| KnowRL | [Official code](https://github.com/zjunlp/KnowRL) |
+
+The paper describes the experimental settings used in our comparisons.
+
+## Acknowledgements
+
+CorVer uses [Infini-gram](https://github.com/infini-gram/infini-gram), [QuCo-RAG](https://github.com/ZhishanQ/QuCo-RAG), [Unsloth](https://github.com/unslothai/unsloth), and [TRL](https://github.com/huggingface/trl). See [third-party notices](docs/third_party.md) for the retained parser license and model/data terms.
